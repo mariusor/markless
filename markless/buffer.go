@@ -39,12 +39,16 @@ func (b *Buffer) Read() (int, error) {
 	return b.Size, err
 }
 
-func (b *Buffer) String() string {
+func (b *Buffer) Data() []byte {
 	var y []byte
 	for _, line := range b.Lines {
 		y = append(y, line.Data...)
 	}
-	return string(y)
+	return y
+}
+
+func (b *Buffer) String() string {
+	return string(b.Data())
 }
 
 type Buffer struct {

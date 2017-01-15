@@ -1,8 +1,9 @@
 package main
 
 import (
-	"./markless"
 	"fmt"
+
+	"./markless"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -23,7 +24,8 @@ func main() {
 	b, _ := markless.NewBuffer(*fileName)
 	read, _ := b.Read()
 
-	fmt.Printf("Read %d bytes\n%s", read, b)
+	fmt.Printf("%s", b.Data())
+	fmt.Printf("Read %d bytes", read)
 
 	return
 }
