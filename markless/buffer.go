@@ -39,6 +39,14 @@ func (b *Buffer) Read() (int, error) {
 	return b.Size, err
 }
 
+func (b *Buffer) String() string {
+	var y []byte
+	for _, line := range b.Lines {
+		y = append(y, line.Data...)
+	}
+	return string(y)
+}
+
 type Buffer struct {
 	Path  string
 	Size  int
