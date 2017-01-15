@@ -1,4 +1,5 @@
-# markless
+# MarkLess
+
 ___
 
-A markdown viewer for the command line
+A markdown pager for the command line.
