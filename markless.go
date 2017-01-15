@@ -23,7 +23,7 @@ func main() {
 	b, _ := markless.NewBuffer(*fileName)
 	read, _ := b.Read()
 
-	fmt.Printf("Read %d bytes\n%s", read, string(b.Data))
+	fmt.Printf("Read %d bytes\n%#v", read, b.Lines)
 
 	return
 }

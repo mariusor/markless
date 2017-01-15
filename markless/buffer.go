@@ -24,18 +24,23 @@ func (b *Buffer) Read() (int, error) {
 
 	br := bufio.NewReader(f)
 	for {
-		line, err := br.ReadBytes('\n')
+		bytes, err := br.ReadBytes('\n')
 		if err != nil {
 			break
 		}
-		b.Data = append(b.Data, line...)
-		b.Size += len(line)
+		l := NewLine(bytes)
+		if len(b.Lines) > 0 {
+			prev := b.Lines[len(b.Lines)-1]
+			l.previous = &prev
+		}
+		b.Lines = append(b.Lines, *l)
+		b.Size += l.Size
 	}
 	return b.Size, err
 }
 
 type Buffer struct {
-	Path string
-	Size int
-	Data []byte
+	Path  string
+	Size  int
+	Lines []Line
 }
