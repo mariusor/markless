@@ -1,10 +1,9 @@
 package main
 
 import (
-	"fmt"
-
 	"./markless"
 	"gopkg.in/alecthomas/kingpin.v2"
+	"os"
 )
 
 const (
@@ -21,11 +20,14 @@ func main() {
 	kingpin.Version(version)
 	kingpin.Parse()
 
-	b, _ := markless.NewBuffer(*fileName)
-	read, _ := b.Read()
+	status, err := markless.Init(
+		markless.WithBuffer(*fileName),
+		markless.Follow(*follow),
+	).Run()
+	if err != nil {
+		panic(err)
+	}
 
-	fmt.Printf("%s", b.Data())
-	fmt.Printf("Read %d bytes", read)
-
+	os.Exit(status)
 	return
 }
