@@ -7,12 +7,12 @@ import (
 
 const (
 	exit_success = 0
-	exit_error = 1
+	exit_error   = 1
 )
 
 type app struct {
 	buffer *Buffer
-	path string
+	path   string
 	follow bool
 }
 
@@ -40,7 +40,7 @@ func Init(opts ...option) *app {
 }
 
 func (a *app) Run() (int, error) {
-	_, err := a.buffer.Read()
+	_, err := a.buffer.Read(default_buffer_height, 0)
 	checkErr(err)
 
 	md := markdown.New()
