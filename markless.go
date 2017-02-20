@@ -1,8 +1,11 @@
 package main
 
 import (
-	"./markless"
+	"bytes"
+	"fmt"
+	parser "github.com/mariusor/cmarkparser"
 	"gopkg.in/alecthomas/kingpin.v2"
+	"io"
 	"os"
 )
 
@@ -15,18 +18,32 @@ var (
 	fileName = kingpin.Arg("file path", "The path of the file to display.").Required().String()
 )
 
+var exitWithError = func(e error) {
+	fmt.Printf("error: %s\n", e)
+	os.Exit(1)
+	return
+}
+
 func main() {
 	kingpin.CommandLine.HelpFlag.Short('h')
 	kingpin.Version(version)
 	kingpin.Parse()
 
-	status, err := markless.Init(
-		markless.WithBuffer(*fileName),
-		markless.Follow(*follow),
-	).Run()
+	var status int = 0
+	f, err := os.Open(*fileName)
 	if err != nil {
-		panic(err)
+		exitWithError(err)
 	}
+
+	data := make([]byte, 512)
+	io.ReadFull(f, data)
+	data = bytes.Trim(data, "\x00")
+
+	doc, err := parser.Parse(data)
+	if err != nil {
+		exitWithError(err)
+	}
+	fmt.Printf("%s\n", doc.String())
 
 	os.Exit(status)
 	return
