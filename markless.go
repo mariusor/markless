@@ -2,49 +2,88 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
-	parser "github.com/mariusor/cmarkparser"
-	"gopkg.in/alecthomas/kingpin.v2"
-	"io"
 	"os"
-)
+	"path/filepath"
 
-const (
-	version = "0.0.1"
-)
-
-var (
-	follow   = kingpin.Flag("follow", "Output refreshed as the file changes on disk").Short('f').Bool()
-	fileName = kingpin.Arg("file path", "The path of the file to display.").Required().String()
+	"gitlab.com/golang-commonmark/markdown"
 )
 
 var exitWithError = func(e error) {
-	fmt.Printf("error: %s\n", e)
+	fmt.Fprintf(os.Stderr, "error: %s\n", e)
 	os.Exit(1)
 	return
 }
 
+// !(path/to/filename.md)
+func ruleFileTransclude(basePath string) func(s *markdown.StateInline, silent bool) bool {
+	memoizedTokens := make(map[string][]markdown.Token)
+	return func(s *markdown.StateInline, silent bool) bool {
+		pos := s.Pos
+		max := s.PosMax
+
+		if pos+2 >= max {
+			return false
+		}
+
+		path := make([]byte, 0)
+		src := s.Src
+		if src[pos] != '!' || src[pos+1] != '(' {
+			return false
+		}
+		for i := pos + 2; i < max; i++ {
+			if src[i] == ')' {
+				break
+			}
+			path = append(path, src[i])
+		}
+		if len(path) == 0 {
+			return false
+		}
+		tokens, exists := memoizedTokens[string(path)]
+		if !exists {
+			newFile := filepath.Join(basePath, string(path))
+			newDoc, err := os.ReadFile(newFile)
+			if err != nil {
+				return false
+			}
+			tokens = s.Md.Block.Parse(newDoc, s.Md, s.Env)
+			memoizedTokens[string(path)] = tokens
+		}
+		for _, tok := range tokens {
+			if tt, ok := tok.(*markdown.Inline); ok {
+				for _, tt := range s.Md.Inline.Parse(tt.Content, s.Md, s.Env) {
+					s.PushToken(tt)
+				}
+				continue
+			}
+			s.PushToken(tok)
+		}
+		s.Pos = s.PosMax
+
+		return true
+	}
+}
+
 func main() {
-	kingpin.CommandLine.HelpFlag.Short('h')
-	kingpin.Version(version)
-	kingpin.Parse()
-
 	var status int = 0
-	f, err := os.Open(*fileName)
-	if err != nil {
-		exitWithError(err)
-	}
+	flag.Parse()
 
-	data := make([]byte, 512)
-	io.ReadFull(f, data)
-	data = bytes.Trim(data, "\x00")
+	for _, fileName := range flag.Args() {
+		data, err := os.ReadFile(fileName)
+		if err != nil {
+			exitWithError(err)
+		}
+		data = bytes.Trim(data, "\x00")
 
-	doc, err := parser.Parse(data)
-	if err != nil {
-		exitWithError(err)
+		//markdown.RegisterCoreRule(10, transcludeFiles)
+		markdown.RegisterInlineRule(10, ruleFileTransclude(filepath.Dir(fileName)))
+		md := markdown.New(markdown.HTML(true))
+		if err = md.Render(os.Stdout, data); err != nil {
+			exitWithError(err)
+		}
 	}
-	fmt.Printf("%s\n", doc.String())
 
 	os.Exit(status)
-	return
 }
