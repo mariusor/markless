@@ -77,9 +77,13 @@ func main() {
 		}
 		data = bytes.Trim(data, "\x00")
 
-		//markdown.RegisterCoreRule(10, transcludeFiles)
 		markdown.RegisterInlineRule(10, ruleFileTransclude(filepath.Dir(fileName)))
-		md := markdown.New(markdown.HTML(true))
+		md := markdown.New(
+			markdown.HTML(true),
+			markdown.Linkify(true),
+			markdown.Typographer(true),
+			markdown.Breaks(true),
+		)
 		if err = md.Render(os.Stdout, data); err != nil {
 			exitWithError(err)
 		}
